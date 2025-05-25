@@ -14,7 +14,7 @@ class InvoiceForm extends React.Component {
     super(props);
     this.state = {
       isOpen: false,
-      currency: '$',
+      currency: '₹',
       currentDate: '',
       invoiceNumber: 1,
       dateOfIssue: '',
@@ -64,30 +64,36 @@ class InvoiceForm extends React.Component {
     this.setState(this.state.items);
   }
   handleCalculateTotal() {
-    var items = this.state.items;
-    var subTotal = 0;
+    const items = this.state.items;
 
-    items.map(function(items) {
-      subTotal = parseFloat(subTotal + (parseFloat(items.price).toFixed(2) * parseInt(items.quantity))).toFixed(2)
-    });
+    // Calculate subtotal
+    let subTotal = items.reduce((acc, item) => {
+        const price = parseFloat(item.price);
+        const quantity = parseInt(item.quantity);
+        return acc + (price * quantity);
+    }, 0);
 
+    subTotal = parseFloat(subTotal.toFixed(2));
+
+    // Calculate tax and discount
+    const taxAmount = parseFloat(((subTotal * this.state.taxRate) / 100).toFixed(2));
+    const discountAmount = parseFloat(((subTotal * this.state.discountRate) / 100).toFixed(2));
+
+    // Calculate total
+    const total = parseFloat((subTotal + taxAmount - discountAmount).toFixed(2));
+
+    // Update all at once
     this.setState({
-      subTotal: parseFloat(subTotal).toFixed(2)
-    }, () => {
-      this.setState({
-        taxAmmount: parseFloat(parseFloat(subTotal) * (this.state.taxRate / 100)).toFixed(2)
-      }, () => {
-        this.setState({
-          discountAmmount: parseFloat(parseFloat(subTotal) * (this.state.discountRate / 100)).toFixed(2)
-        }, () => {
-          this.setState({
-            total: ((subTotal - this.state.discountAmmount) + parseFloat(this.state.taxAmmount))
-          });
-        });
-      });
-    });
+        subTotal,
+        taxAmount,
+        discountAmount,
+        total
 
-  };
+          });
+        
+      }
+
+
   onItemizedItemEdit(evt) {
     var item = {
       id: evt.target.id,
@@ -97,7 +103,7 @@ class InvoiceForm extends React.Component {
     var items = this.state.items.slice();
     var newItems = items.map(function(items) {
       for (var key in items) {
-        if (key == item.name && items.id == item.id) {
+        if (key === item.name && items.id === item.id) {
           items[key] = item.value;
         }
       }
@@ -218,6 +224,7 @@ class InvoiceForm extends React.Component {
                 <option value="$">SGD (Signapore Dollar)</option>
                 <option value="¥">CNY (Chinese Renminbi)</option>
                 <option value="₿">BTC (Bitcoin)</option>
+                <option value="₹">INR (Indian rupees)</option>
               </Form.Select>
             </Form.Group>
             <Form.Group className="my-3">
